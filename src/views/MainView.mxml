@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group height="100%"
+	width="100%"
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:s="library://ns.adobe.com/flex/spark">
+
+	<fx:Script>
+		<![CDATA[
+			import model.Model;
+
+
+			//=================================
+			// protected properties 
+			//=================================
+
+			[Bindable] protected var _model : Model = Model.getInstance();
+		]]>
+	</fx:Script>
+
+	<s:layout>
+
+		<s:VerticalLayout paddingBottom="20"
+			paddingLeft="20"
+			paddingRight="20"
+			paddingTop="20" />
+	</s:layout>
+
+
+	<s:HGroup verticalAlign="middle"
+		width="50%">
+
+		<s:Label text="URI" />
+
+		<s:TextInput id="namespaceURIInput"
+			width="100%" />
+
+	</s:HGroup>
+
+	<s:Spacer height="10" />
+
+	<s:Line width="100%">
+
+		<s:stroke>
+
+			<s:SolidColorStroke color="0xd7d7d7" />
+		</s:stroke>
+	</s:Line>
+
+	<s:Spacer height="10" />
+
+	<s:HGroup height="30%"
+		width="100%">
+
+		<s:VGroup height="100%"
+			width="50%">
+
+			<!--
+			<mx:Tree dataProvider="{ _model.sources }"
+				labelFunction="{ _model.sourceTreeLabelFunction }"
+				width="100%" />
+			-->
+
+			<s:DataGrid dataProvider="{ _model.sources }"
+				height="100%"
+				width="100%">
+
+				<s:columns>
+
+					<s:ArrayList>
+
+						<s:GridColumn dataField="nativePath"
+							headerText="Sources" />
+
+						<s:GridColumn itemRenderer="{ _model.getSourcesRemoveIconRendererFactory() }"
+							width="44" />
+					</s:ArrayList>
+				</s:columns>
+			</s:DataGrid>
+
+			<s:HGroup horizontalAlign="right"
+				verticalAlign="middle"
+				width="100%">
+
+				<s:Button click="_model.browseForSourceRoot();"
+					label="add source" />
+			</s:HGroup>
+		</s:VGroup>
+
+		<s:VGroup height="100%"
+			width="50%">
+
+			<s:DataGrid dataProvider="{ _model.packages }"
+				height="100%"
+				width="100%">
+
+				<s:columns>
+
+					<s:ArrayList>
+
+						<s:GridColumn dataField="nativePath"
+							headerText="Packages" />
+
+						<s:GridColumn itemRenderer="{ _model.getPackagesRemoveIconRendererFactory() }"
+							width="44" />
+					</s:ArrayList>
+				</s:columns>
+			</s:DataGrid>
+
+			<s:HGroup horizontalAlign="right"
+				verticalAlign="middle"
+				width="100%">
+
+				<s:Button click="_model.browseForPackage();"
+					enabled="{ _model.sources.length &gt; 0 }"
+					label="add package" />
+			</s:HGroup>
+		</s:VGroup>
+
+	</s:HGroup>
+
+	<s:Spacer height="10" />
+
+	<s:Line width="100%">
+
+		<s:stroke>
+
+			<s:SolidColorStroke color="0xd7d7d7"
+				weight="2" />
+		</s:stroke>
+	</s:Line>
+
+	<s:Spacer height="10" />
+
+	<s:DataGrid dataProvider="{ _model.components }"
+		height="80%"
+		width="100%">
+
+		<s:columns>
+
+			<s:ArrayList>
+
+				<s:GridColumn dataField="id"
+					headerText="id" />
+
+				<s:GridColumn dataField="clazz"
+					headerText="class" />
+
+				<s:GridColumn dataField="lookupOnly"
+					headerText="lookup only" />
+
+				<s:GridColumn itemRenderer="{ _model.getComponentRemoveIconRendererFactory() }"
+					width="44" />
+			</s:ArrayList>
+		</s:columns>
+
+	</s:DataGrid>
+
+	<s:HGroup verticalAlign="middle"
+		width="100%">
+
+		<s:Label text="{ _model.components.length } Classes" />
+
+		<s:Spacer width="100%" />
+
+		<s:Button click="_model.browseForFile();"
+			enabled="{ _model.sources.length &gt; 0 }"
+			label="add file" />
+
+	</s:HGroup>
+
+</s:Group>
