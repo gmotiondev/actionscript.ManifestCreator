@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:WindowedApplication height="900"
 	showStatusBar="false"
+	title="Manifest Creator"
 	width="1600"
 	xmlns:fx="http://ns.adobe.com/mxml/2009"
 	xmlns:mx="library://ns.adobe.com/flex/mx"

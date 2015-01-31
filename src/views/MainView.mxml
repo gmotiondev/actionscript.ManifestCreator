@@ -35,10 +35,13 @@
 		verticalAlign="middle"
 		width="100%">
 
-		<s:Label text="URI" />
+		<s:Label text="name" />
 
-		<s:TextInput id="namespaceURIInput"
-			width="700" />
+		<s:TextInput id="nameInput" text="manifest"
+			width="400" />
+
+		<s:Button click="_model.create( nameInput.text );"
+			label="create" />
 
 	</s:HGroup>
 
@@ -61,10 +64,15 @@
 
 				<s:Label paddingTop="3"
 					text="Sources" />
+
+				<s:Spacer width="100%" />
+
+				<s:CheckBox id="expandOnSelectionCheckbox"
+					label="Expand on selection" />
 			</s:HGroup>
 
-			<mx:Tree dataProvider="{ _model.sources }"
-				dragEnabled="true"
+			<components:Tree dataProvider="{ _model.sources }"
+				expandOnSelection="{ expandOnSelectionCheckbox.selected }"
 				height="100%"
 				itemRenderer="{ _model.getSourcesTreeItemRendererFactory() }"
 				labelFunction="{ _model.sourceTreeLabelFunction }"
@@ -86,32 +94,11 @@
 
 			</s:HGroup>
 
-			<s:DataGrid dataProvider="{ _model.components }"
-				dropEnabled="true"
+			<s:DataGrid columns="{ _model.componentsGridColumns }"
+				dataProvider="{ _model.components }"
+				editable="true"
 				height="100%"
-				width="100%">
-
-				<s:columns>
-
-					<s:ArrayList>
-
-						<s:GridColumn dataField="id"
-							headerText="id" />
-
-						<s:GridColumn dataField="clazz"
-							headerText="class" />
-
-						<s:GridColumn dataField="lookupOnly"
-							editable="true"
-							headerText="lookup only"
-							width="100" />
-
-						<s:GridColumn itemRenderer="{ _model.getComponentRemoveIconRendererFactory() }"
-							width="44" />
-					</s:ArrayList>
-				</s:columns>
-
-			</s:DataGrid>
+				width="100%" />
 
 		</s:VGroup>
 

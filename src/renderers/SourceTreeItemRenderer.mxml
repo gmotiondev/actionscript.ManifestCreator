@@ -6,7 +6,7 @@
 
 	<fx:Script>
 		<![CDATA[
-			import mx.controls.Tree;
+			import components.Tree;
 			import mx.events.FlexEvent;
 			import assets.AssetName;
 			import assets.Assets;
@@ -16,6 +16,8 @@
 			//=================================
 			// public properties 
 			//=================================
+
+			public var expandOnSelection : Boolean;
 
 			private var _external_removeHandler : Function;
 
@@ -106,7 +108,9 @@
 			{
 				updateSelected( _file , selectedCheckbox.selected );
 
-				if( !treeListData.open && owner is Tree )
+				if( !treeListData.open
+					&& owner is Tree
+					&& Tree( owner ).expandOnSelection )
 				{
 					var tree : Tree = owner as Tree;
 					tree.expandChildrenOf( _file , true );

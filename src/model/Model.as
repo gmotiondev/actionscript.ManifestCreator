@@ -11,6 +11,8 @@ package model
 	import flash.events.EventDispatcher;
 	import flash.events.MouseEvent;
 	import flash.filesystem.File;
+	import flash.filesystem.FileMode;
+	import flash.filesystem.FileStream;
 	import flash.utils.Dictionary;
 	import mx.collections.ArrayCollection;
 	import mx.collections.ArrayList;
@@ -22,6 +24,9 @@ package model
 	import renderers.IconRenderer;
 	import renderers.SourceTreeItemRenderer;
 	import spark.collections.Sort;
+	import spark.components.gridClasses.ComboBoxGridItemEditor;
+	import spark.components.gridClasses.GridColumn;
+	import spark.formatters.DateTimeFormatter;
 
 	[Bindable]
 	public class Model extends EventDispatcher
@@ -48,6 +53,8 @@ package model
 			_packagesMap = new Dictionary();
 			_sourcesMap = new Dictionary();
 			_componentsMap = new Dictionary();
+
+			initComponentsGridColumns();
 		}
 
 		//=================================
@@ -79,6 +86,8 @@ package model
 
 		protected var _componentsMap : Dictionary;
 
+		protected var _dateformatter : DateTimeFormatter = new DateTimeFormatter();
+
 		protected var _packagesMap : Dictionary;
 
 		protected var _sourcesMap : Dictionary;
@@ -101,6 +110,38 @@ package model
 			var rootdir : File = new File();
 			rootdir.addEventListener( Event.SELECT , sourceRootDir_selectHandler );
 			rootdir.browseForDirectory( "select root dir" );
+		}
+
+		public function create( name : String ) : void
+		{
+			var xml : XML = <componentPackage/>;
+
+			for each( var c : Component in components )
+			{
+				var cxml : XML = <component/>;
+				cxml.@id = c.id;
+				cxml[ '@class' ] = c.clazz;
+
+				if( c.lookupOnly )
+					cxml.@lookupOnly = true;
+				xml.appendChild( cxml );
+			}
+
+			_dateformatter.dateTimePattern = "yyyyMMdd-HHmmss";
+			var date : Date = new Date();
+			var ms : Number = date.time % 1000;
+			var dfn : String = ( name || "manifest" ) + "-" + _dateformatter.format( date ) + "." + ms.toFixed();
+			var content : String = '<?xml version="1.0"?>\n' + xml.toString();
+
+			var file : File = new File( File.applicationStorageDirectory.nativePath + "\\" + dfn + ".xml" );
+
+			var fs : FileStream = new FileStream();
+			fs.open( file , FileMode.WRITE );
+			fs.writeUTFBytes( content );
+			fs.close();
+
+			file.openWithDefaultApplication();
+			trace( file.nativePath );
 		}
 
 		public function getComponentRemoveIconRendererFactory() : IFactory
@@ -284,6 +325,32 @@ package model
 			var bstr : String = b ? b.clazz : "";
 
 			return ObjectUtil.stringCompare( astr , bstr , true );
+		}
+
+		private function initComponentsGridColumns() : void
+		{
+			var col : GridColumn = new GridColumn( "id" );
+			col.dataField = "id";
+			col.width = 250;
+
+			var col2 : GridColumn = new GridColumn( "clas" );
+			col2.dataField = "clazz";
+
+			var col3 : GridColumn = new GridColumn( "lookup only" );
+			col3.dataField = "lookupOnly";
+			col3.editable = true;
+			var editorFactory : ClassFactory = new ClassFactory( ComboBoxGridItemEditor );
+			editorFactory.properties = { dataProvider: new ArrayCollection( [ false , true ] ) };
+			col3.itemEditor = editorFactory;
+			col3.resizable = false;
+			col3.width = 100;
+
+			var col4 : GridColumn = new GridColumn( " " );
+			col4.resizable = false;
+			col4.width = 44;
+			col4.itemRenderer = getComponentRemoveIconRendererFactory();
+
+			componentsGridColumns = new ArrayList( [ col , col2 , col3 , col4 ] );
 		}
 
 		private function parseComponentPath( nativePath : String ) : String
