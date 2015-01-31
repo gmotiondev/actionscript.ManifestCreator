@@ -18,8 +18,11 @@ package assets
 		// public static properties 
 		//=================================
 
-		[Embed( source = "assets/images/remove_icon_20x20.png" )]
-		public static const REMOVE_ICON : Class;
+		[Embed( source = "assets/images/add_icon_16x16.png" )]
+		public static const ADD_ICON_16x16 : Class;
+
+		[Embed( source = "assets/images/remove_icon_16x16.png" )]
+		public static const REMOVE_ICON_16x16 : Class;
 
 		//=================================
 		// protected static properties 

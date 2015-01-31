@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXTreeItemRenderer dataChange="dataChangeHandler(event);"
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:s="library://ns.adobe.com/flex/spark">
+
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Tree;
+			import mx.events.FlexEvent;
+			import assets.AssetName;
+			import assets.Assets;
+			import model.FileItem;
+
+
+			//=================================
+			// public properties 
+			//=================================
+
+			private var _external_removeHandler : Function;
+
+
+			/**
+			 * method signature<br/>
+			 * <code>function( event:MouseEvent, data:* ):void</code>
+			 */
+			public function set external_removeHandler( value : Function ) : void
+			{
+				_external_removeHandler = value;
+			}
+
+			protected var _external_selectedChangeHandler : Function;
+
+			/**
+			 * method signature<br/>
+			 * <code>function( event:MouseEvent, data:*, selected:Boolean ):void</code>
+			 */
+			public function set external_selectedChangeHandler( value : Function ) : void
+			{
+				_external_selectedChangeHandler = value;
+			}
+
+			//=================================
+			// protected properties 
+			//=================================
+
+			[Bindable] protected var _file : FileItem;
+
+			//=================================
+			// protected methods 
+			//=================================
+
+			protected function dataChangeHandler( event : FlexEvent ) : void
+			{
+				_file = data as FileItem;
+
+				var info : Object = getChildInfo( _file );
+
+				if( _file && info.on > 0 && info.off == 0 )
+				{
+					selectedCheckbox.setStyle( "useCheckMark" , true );
+					selectedCheckbox.selected = true;
+				}
+				else if( _file && info.on > 0 && info.off > 0 )
+				{
+					selectedCheckbox.setStyle( "useCheckMark" , false );
+					selectedCheckbox.selected = true;
+				}
+				else
+				{
+					selectedCheckbox.setStyle( "useCheckMark" , true );
+					selectedCheckbox.selected = false;
+				}
+			}
+
+			protected function getChildInfo( fi : FileItem ) : Object
+			{
+				var info : Object = { on: 0 , off: 0 };
+
+				if( fi )
+				{
+					if( fi.file.isDirectory )
+					{
+						for each( var cfi : FileItem in fi.children )
+						{
+							var dinfo : Object = getChildInfo( cfi );
+							info.on += dinfo.on;
+							info.off += dinfo.off;
+						}
+					}
+					else if( fi.selected )
+						info.on++;
+					else
+						info.off++;
+				}
+				return info;
+			}
+
+			protected function removeButton_clickHandler( event : MouseEvent ) : void
+			{
+				if( _external_removeHandler is Function )
+					_external_removeHandler( event , _file );
+			}
+
+			protected function selectedCheckbox_changeHandler( event : Event ) : void
+			{
+				updateSelected( _file , selectedCheckbox.selected );
+
+				if( !treeListData.open && owner is Tree )
+				{
+					var tree : Tree = owner as Tree;
+					tree.expandChildrenOf( _file , true );
+				}
+
+				if( _external_selectedChangeHandler is Function )
+					_external_selectedChangeHandler( event , _file , selectedCheckbox.selected );
+			}
+
+			protected function updateSelected( fi : FileItem , value : Boolean ) : void
+			{
+				if( fi.file.isDirectory && ( !fi.children || fi.children.length == 0 ) )
+					fi.selected = false;
+				else
+					fi.selected = value;
+
+				for each( var f : FileItem in fi.children )
+				{
+					updateSelected( f , value );
+				}
+			}
+		]]>
+	</fx:Script>
+
+
+	<s:states>
+
+		<s:State name="normal" />
+
+		<s:State name="hovered" />
+
+		<s:State name="selected" />
+	</s:states>
+
+	<s:HGroup bottom="0"
+		gap="4"
+		left="0"
+		right="0"
+		top="0"
+		verticalAlign="middle">
+
+		<s:Rect id="indentationSpacer"
+			alpha="0"
+			percentHeight="100"
+			width="{treeListData.indent}">
+
+			<s:fill>
+
+				<s:SolidColor color="0xFFFFFF" />
+			</s:fill>
+		</s:Rect>
+
+		<s:Group id="disclosureGroup">
+
+			<s:BitmapImage source="{treeListData.disclosureIcon}"
+				visible="{treeListData.hasChildren}" />
+		</s:Group>
+
+		<s:CheckBox id="selectedCheckbox"
+			change="selectedCheckbox_changeHandler(event);"
+			skinClass="renderers.TreeItemRendererCheckBoxSkin" />
+
+		<s:BitmapImage source="{treeListData.icon}" />
+
+		<s:Label id="labelField"
+			maxDisplayedLines="1"
+			paddingTop="2"
+			text="{treeListData.label}"
+			width="100%" />
+
+		<s:Image id="removeButton"
+			click="removeButton_clickHandler(event);"
+			includeInLayout="{ _file.isRoot }"
+			source="{ Assets.getBitmapData( AssetName.REMOVE_ICON_16x16 ) }"
+			visible="{ _file.isRoot }" />
+
+		<s:Spacer width="10" />
+	</s:HGroup>
+</s:MXTreeItemRenderer>

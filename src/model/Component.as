@@ -7,8 +7,6 @@
 
 package model
 {
-	import flash.filesystem.File;
-
 	public class Component
 	{
 
@@ -16,7 +14,7 @@ package model
 		// constructor 
 		//=================================
 
-		public function Component( file : File , id : String , clazz : String , lookupOnly : Boolean = false )
+		public function Component( file : FileItem , id : String , clazz : String , lookupOnly : Boolean = false )
 		{
 			this.file = file;
 			this.id = id;
@@ -31,7 +29,7 @@ package model
 
 		public var clazz : String;
 
-		public var file : File;
+		public var file : FileItem;
 
 		public var id : String;
 

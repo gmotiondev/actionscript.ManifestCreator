@@ -15,6 +15,8 @@ package assets
 		// public static properties 
 		//=================================
 
-		public static const REMOVE_ICON : String = "REMOVE_ICON";
+		public static const ADD_ICON_16x16 : String = "ADD_ICON_16x16";
+
+		public static const REMOVE_ICON_16x16 : String = "REMOVE_ICON_16x16";
 	}
 }

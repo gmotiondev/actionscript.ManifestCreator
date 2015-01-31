@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:s="library://ns.adobe.com/flex/spark">
+
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("components.Separator")]
+	</fx:Metadata>
+
+	<fx:Script>
+		<![CDATA[
+			//=================================
+			// protected methods 
+			//=================================
+
+			override protected function updateDisplayList( unscaledWidth : Number , unscaledHeight : Number ) : void
+			{
+				super.updateDisplayList( unscaledWidth , unscaledHeight );
+
+				var pt : Number = getStyle( "paddingTop" );
+				pt = isNaN( pt ) ? 0 : pt;
+				var pb : Number = getStyle( "paddingBottom" );
+				pb = isNaN( pb ) ? 0 : pb;
+				var pl : Number = getStyle( "paddingLeft" );
+				pl = isNaN( pl ) ? 0 : pl;
+				var pr : Number = getStyle( "paddingRight" );
+				pr = isNaN( pr ) ? 0 : pr;
+				
+				container.top = pt;
+				container.bottom = pb;
+				container.left = pl;
+				container.right = pr;
+				
+				var lw:Number = getStyle( "lineWeight" );
+				lw = isNaN( lw ) ? 2 : lw;
+
+				if( unscaledWidth > unscaledHeight )
+				{
+					line.width = NaN;
+					line.height = lw;
+					line.top = null;
+					line.bottom = null;
+					line.left = 0;
+					line.right = 0;
+				}
+				else
+				{
+					line.width = lw;
+					line.height = NaN;
+					line.top = 0;
+					line.bottom = 0;
+					line.left = null;
+					line.right = null;
+				}
+				
+			}
+		]]>
+	</fx:Script>
+
+	<s:Group id="container"
+		bottom="0"
+		left="0"
+		right="0"
+		top="0">
+
+		<s:Rect id="line" >
+
+			<s:fill>
+
+				<s:SolidColor color="0xd7d7d7" />
+			</s:fill>
+		</s:Rect>
+
+	</s:Group>
+</s:Skin>

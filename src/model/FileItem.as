@@ -31,7 +31,8 @@ package model
 
 		public var children : ArrayCollection;
 		public var file : File;
-
 		public var isRoot : Boolean;
+		public var parent : FileItem;
+		public var selected : Boolean;
 	}
 }

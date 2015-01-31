@@ -13,12 +13,14 @@ package model
 	import flash.filesystem.File;
 	import flash.utils.Dictionary;
 	import mx.collections.ArrayCollection;
+	import mx.collections.ArrayList;
 	import mx.core.ClassFactory;
 	import mx.core.IFactory;
 	import mx.utils.ObjectUtil;
 	import assets.AssetName;
 	import assets.Assets;
 	import renderers.IconRenderer;
+	import renderers.SourceTreeItemRenderer;
 	import spark.collections.Sort;
 
 	[Bindable]
@@ -56,9 +58,7 @@ package model
 
 		protected static var _instance : Model = new Model();
 
-		protected static var _packagesRemoveIconRendererFactory : ClassFactory;
-
-		protected static var _sourcesRemoveIconRendererFactory : ClassFactory;
+		protected static var _sourcesSourcesTreeItemRendererFactory : ClassFactory;
 
 
 		//=================================
@@ -66,6 +66,8 @@ package model
 		//=================================
 
 		public var components : ArrayCollection;
+
+		public var componentsGridColumns : ArrayList;
 
 		public var packages : ArrayCollection;
 
@@ -94,21 +96,6 @@ package model
 		// public methods 
 		//=================================
 
-		public function browseForFile() : void
-		{
-			var file : File = new File();
-			file.addEventListener( Event.SELECT , file_selectHandler );
-			file.browse();
-		}
-
-		public function browseForPackage() : void
-		{
-			var last : File = sources.getItemAt( sources.length - 1 ) as File;
-			var pkg : File = new File( last.nativePath );
-			pkg.addEventListener( Event.SELECT , package_selectHandler );
-			pkg.browseForDirectory( "select package" );
-		}
-
 		public function browseForSourceRoot() : void
 		{
 			var rootdir : File = new File();
@@ -121,35 +108,26 @@ package model
 			if( !_componentRemoveIconRendererFactory )
 			{
 				_componentRemoveIconRendererFactory = new ClassFactory( IconRenderer );
-				_componentRemoveIconRendererFactory.properties = { source: Assets.getBitmapData( AssetName.REMOVE_ICON )
+				_componentRemoveIconRendererFactory.properties = { source: Assets.getBitmapData( AssetName.REMOVE_ICON_16x16 )
 						, external_clickHandler: removeComponent_clickHandler };
 			}
 
 			return _componentRemoveIconRendererFactory;
 		}
 
-		public function getPackagesRemoveIconRendererFactory() : IFactory
+		public function getSourcesTreeItemRendererFactory() : IFactory
 		{
-			if( !_packagesRemoveIconRendererFactory )
+			if( !_sourcesSourcesTreeItemRendererFactory )
 			{
-				_packagesRemoveIconRendererFactory = new ClassFactory( IconRenderer );
-				_packagesRemoveIconRendererFactory.properties = { source: Assets.getBitmapData( AssetName.REMOVE_ICON )
-						, external_clickHandler: removePackage_clickHandler };
+				_sourcesSourcesTreeItemRendererFactory = new ClassFactory( SourceTreeItemRenderer );
+				_sourcesSourcesTreeItemRendererFactory.properties =
+					{
+						external_selectedChangeHandler: file_selectedChangeHandler
+						, external_removeHandler: removeSource_clickHandler
+					};
 			}
 
-			return _packagesRemoveIconRendererFactory;
-		}
-
-		public function getSourcesRemoveIconRendererFactory() : IFactory
-		{
-			if( !_sourcesRemoveIconRendererFactory )
-			{
-				_sourcesRemoveIconRendererFactory = new ClassFactory( IconRenderer );
-				_sourcesRemoveIconRendererFactory.properties = { source: Assets.getBitmapData( AssetName.REMOVE_ICON )
-						, external_clickHandler: removeSource_clickHandler };
-			}
-
-			return _sourcesRemoveIconRendererFactory;
+			return _sourcesSourcesTreeItemRendererFactory;
 		}
 
 		public function sourceTreeLabelFunction( item : FileItem ) : String
@@ -167,12 +145,26 @@ package model
 		// protected methods 
 		//=================================
 
-		protected function addComponent( file : File ) : void
+		protected function addComponents( fi : FileItem ) : void
 		{
+			if( !fi )
+				return;
+
+			var file : File = fi.file;
+
+			if( file.isDirectory )
+			{
+				for each( var fi : FileItem in fi.children )
+				{
+					addComponents( fi );
+				}
+
+				return;
+			}
 
 			var id : String = file.name.replace( "." + file.extension , "" );
 			var path : String = file.nativePath.replace( "." + file.extension , "" );
-			var component : Component = new Component( file , id , parseComponentPath( path ) );
+			var component : Component = new Component( fi , id , parseComponentPath( path ) );
 
 			if( !_componentsMap[ file.nativePath ] )
 			{
@@ -181,60 +173,13 @@ package model
 			}
 		}
 
-		protected function addPackageComponents( pkg : File ) : void
+		protected function file_selectedChangeHandler( event : Event , fi : FileItem , selected : Boolean ) : void
 		{
-			if( !pkg )
-				return;
-
-			for each( var f : File in pkg.getDirectoryListing() )
-			{
-				if( f.isDirectory )
-				{
-					addPackageComponents( f );
-					continue;
-				}
-
-				addComponent( f );
-			}
-		}
-
-		protected function file_selectHandler( event : Event ) : void
-		{
-			var file : File = event.currentTarget as File;
-			file.removeEventListener( Event.SELECT , file_selectHandler );
-			addComponent( file );
+			selected ? addComponents( fi ) : removeComponents( fi );
 			components.refresh();
 		}
 
-		protected function package_selectHandler( event : Event ) : void
-		{
-			var pkg : File = event.currentTarget as File;
-
-			if( !_packagesMap[ pkg.nativePath ] )
-			{
-				var isChild : Boolean;
-
-				for each( var src : File in sources )
-				{
-					if( pkg.nativePath.indexOf( src.nativePath ) > -1 )
-					{
-						isChild = true;
-						break;
-					}
-				}
-
-				if( isChild )
-				{
-					_packagesMap[ pkg.nativePath ] = pkg;
-					packages.addItem( pkg );
-
-					addPackageComponents( pkg );
-					components.refresh();
-				}
-			}
-		}
-
-		protected function parseItem( file : File ) : FileItem
+		protected function parseDirectory( file : File ) : FileItem
 		{
 			if( !file )
 				return null;
@@ -251,10 +196,13 @@ package model
 
 					for each( var f : File in files )
 					{
-						var nfi : FileItem = parseItem( f );
+						var nfi : FileItem = parseDirectory( f );
 
 						if( nfi )
+						{
 							children.push( nfi );
+							nfi.parent = fi;
+						}
 					}
 
 					if( children.length > 0 )
@@ -265,93 +213,49 @@ package model
 			return fi;
 		}
 
-		protected function removeComponent( comp : Component ) : void
+		protected function removeComponent_clickHandler( event : MouseEvent , component : Component ) : void
 		{
-			if( comp )
+			removeComponents( component.file );
+		}
+
+		protected function removeComponents( fi : FileItem ) : void
+		{
+			if( fi )
 			{
-				var instance : Component = _componentsMap[ comp.file.nativePath ]
+				var file : File = fi.file;
+
+				if( file.isDirectory )
+				{
+					fi.selected = false;
+
+					for each( var cfi : FileItem in fi.children )
+					{
+						removeComponents( cfi );
+					}
+					return;
+				}
+
+				var instance : Component = _componentsMap[ file.nativePath ]
 
 				if( instance )
 				{
 					components.removeItem( instance );
-					delete _componentsMap[ instance.file.nativePath ];
+					instance.file.selected = false;
+					delete _componentsMap[ instance.file.file.nativePath ];
 				}
 			}
 		}
 
-		protected function removeComponent_clickHandler( event : MouseEvent , component : Component ) : void
+		protected function removeSource_clickHandler( event : MouseEvent , fi : FileItem ) : void
 		{
-			removeComponent( component );
-
-			for each( var f : File in packages )
+			if( fi && sources )
 			{
-				var removePkg : Boolean = true;
-
-				for each( var c : Component in components )
-				{
-					if( c.file.nativePath.indexOf( f.nativePath ) > -1 )
-					{
-						removePkg = false;
-						break;
-					}
-				}
-
-				if( removePkg )
-				{
-					removePackage( f );
-				}
-			}
-		}
-
-		protected function removePackage( pkg : File , removingComponents : Boolean = false ) : void
-		{
-			if( pkg )
-			{
-				var removed : Boolean;
-
-				if( _packagesMap[ pkg.nativePath ] )
-				{
-					var pkgInstance : File = _packagesMap[ pkg.nativePath ];
-					delete _packagesMap[ pkg.nativePath ];
-					removed = packages.removeItem( pkgInstance );
-				}
-
-				if( removed || removingComponents )
-				{
-
-					for each( var f : File in pkg.getDirectoryListing() )
-					{
-						if( f.isDirectory )
-						{
-							removePackage( f , true );
-							continue;
-						}
-						removeComponent( _componentsMap[ f.nativePath ] );
-					}
-				}
-			}
-		}
-
-		protected function removePackage_clickHandler( event : MouseEvent , file : File ) : void
-		{
-			removePackage( file );
-		}
-
-		protected function removeSource_clickHandler( event : MouseEvent , file : File ) : void
-		{
-			if( file && sources )
-			{
-				var removed : Boolean = sources.removeItem( file );
+				var removed : Boolean = sources.removeItem( fi );
 
 				if( removed )
 				{
-					delete _sourcesMap[ file.nativePath ];
-
-					for each( var f : File in file.getDirectoryListing() )
-					{
-						if( f.isDirectory )
-							removePackage( f , true );
-					}
+					delete _sourcesMap[ fi.file.nativePath ];
+					removeComponents( fi );
 				}
 			}
 		}
@@ -363,11 +267,10 @@ package model
 
 			if( !_sourcesMap[ rootdir.nativePath ] )
 			{
-				_sourcesMap[ rootdir.nativePath ] = rootdir;
-				sources.addItem( rootdir );
-				//var fi : FileItem = parseItem( rootdir );
-				//fi.isRoot = true;
-				//sources.addItem( fi );
+				var fi : FileItem = parseDirectory( rootdir );
+				fi.isRoot = true;
+				_sourcesMap[ rootdir.nativePath ] = fi;
+				sources.addItem( fi );
 			}
 		}
 
@@ -388,8 +291,10 @@ package model
 			if( !nativePath )
 				return "";
 
-			for each( var f : File in sources )
+			for each( var fi : FileItem in sources )
 			{
+				var f : File = fi.file;
+
 				if( nativePath.indexOf( f.nativePath ) > -1 )
 				{
 					var dotPath : String = nativePath.replace( f.nativePath , "" );
